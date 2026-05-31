@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Unit Converter</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1, h2 { color: #333; }
+        form { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button.danger { background-color: #e53935; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f5f5f5; }
+        tr:nth-child(even) { background-color: #fafafa; }
+    </style>
+</head>
+<body>
+
+    <h1>Unit Converter</h1>
+
+    <!-- Formulaire de conversion -->
+    <form th:action="@{/convert}" method="post">
+        <input type="number" name="value" step="any" placeholder="Valeur" required/>
+
+        <select name="fromUnit">
+            <option th:each="unit : ${units}"
+                    th:value="${unit}"
+                    th:text="${unit}">
+            </option>
+        </select>
+
+        <span>→</span>
+
+        <select name="toUnit">
+            <option th:each="unit : ${units}"
+                    th:value="${unit}"
+                    th:text="${unit}">
+            </option>
+        </select>
+
+        <button type="submit">Convertir</button>
+    </form>
+
+    <!-- Historique -->
+    <h2>Historique</h2>
+
+    <form th:action="@{/clear}" method="post">
+        <button type="submit" class="danger">Vider l'historique</button>
+    </form>
+
+    <br/>
+
+    <table th:if="${not #lists.isEmpty(history)}">
+        <thead>
+            <tr>
+                <th>Valeur</th>
+                <th>De</th>
+                <th>Vers</th>
+                <th>Résultat</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="entry : ${history}">
+                <td th:text="${entry.value}"></td>
+                <td th:text="${entry.fromUnit}"></td>
+                <td th:text="${entry.toUnit}"></td>
+                <td th:text="${entry.result}"></td>
+                <td th:text="${entry.timestamp}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p th:if="${#lists.isEmpty(history)}">Aucune conversion effectuée.</p>
+
+</body>
+</html>

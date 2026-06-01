@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: history-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: history-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: history-service
+  template:
+    metadata:
+      labels:
+        app: history-service
+    spec:
+      containers:
+        - name: history-service
+          image: history-service:1.0
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:h2:file:/data/historydb"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: H2_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: unit-converter-secret
+                  key: H2_USERNAME
+            - name: H2_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: unit-converter-secret
+                  key: H2_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: history-storage
+              mountPath: /data
+      volumes:
+        - name: history-storage
+          persistentVolumeClaim:
+            claimName: history-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: history-service
+  namespace: default
+spec:
+  selector:
+    app: history-service
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+  type: ClusterIP

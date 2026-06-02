@@ -77,7 +77,7 @@ if ($SkipBuild) {
         Write-Host "  -> Building $svc..." -ForegroundColor Gray
         $svcPath = Join-Path $root $svc
         Push-Location $svcPath
-        cmd /c "mvnw.cmd clean package -DskipTests -q"
+        cmd /c "mvnw clean package -DskipTests -q"
         docker build -t "${svc}:1.0" . -q
         Pop-Location
         Write-Success "$svc:1.0 built."

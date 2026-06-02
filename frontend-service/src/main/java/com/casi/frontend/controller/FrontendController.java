@@ -12,6 +12,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.casi.frontend.model.ConversionRequest;
@@ -40,7 +42,8 @@ public class FrontendController {
     @PostMapping("/convert")
     public String convert(@RequestParam double value,
                         @RequestParam Unit fromUnit,
-                        @RequestParam Unit toUnit) {
+                        @RequestParam Unit toUnit,
+                        Model model) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -50,13 +53,25 @@ public class FrontendController {
             headers
         );
 
-        restTemplate.postForObject(
-            conversionServiceUrl + "/api/conversion",
-            entity,
-            Object.class
-        );
-
-        return "redirect:/";
+        try {
+            restTemplate.postForObject(
+                conversionServiceUrl + "/api/conversion",
+                entity,
+                Object.class
+            );
+            return "redirect:/";
+        } catch (HttpStatusCodeException e) {
+            Object[] history = restTemplate.getForObject(historyServiceUrl + "/api/history", Object[].class);
+            model.addAttribute("history", history != null ? Arrays.asList(history) : List.of());
+            model.addAttribute("units", List.of("CELSIUS", "FAHRENHEIT", "KELVIN",
+                                                "KILOMETERS", "MILES", "METERS",
+                                                "KILOGRAMS", "POUNDS", "GRAMS"));
+            model.addAttribute("errorMessage", "Conversion impossible ! Les unités sélectionnées sont incompatibles.");
+            return "index";
+        } catch (RestClientException e) {
+            model.addAttribute("errorMessage", "Le service de conversion est indisponible actuellement.");
+            return "index";
+        }
     }
 
     @PostMapping("/clear")
